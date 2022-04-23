@@ -65,16 +65,17 @@ def load_json_file(infile) -> Generator:
 @click.option('--outfile', required=False, type=click.File('w'))
 @click.option('--fields', required=False, default=DEFAULT_FIELDS, multiple=True)
 @click.option('--format', required=False, default='json', type=click.STRING)
-@click.option('-h','--help', is_flag=True)
 def filter(infile: str,
            outfile: TextIOWrapper,
            fields: List[str],
-           format: str,
-           help: bool):
+           format: str):
 
-    if help:
-        click.echo("filter --infile <input_file> --outfile<output_file> [--fields <FIELDS_LIST>] [--format <FORMAT>]")
-        return 0
+    if infile[-6:] == ".jsonl":
+        click.echo("{} doesn't seems to be a flatten file. You can generate a flatten file by executing the following "
+                   "command: twarc2 flatten [OPTIONS] {} [OUTFILE] "
+                   "This plugins requires a flatten file to be executed".format(infile,infile))
+        click.confirm("Do you wish to continue?", abort=True)
+
 
     infile_file = open(infile, 'rb')
     tweet_generator: Generator = load_json_file(infile_file)
@@ -105,6 +106,7 @@ def filter(infile: str,
                     value = ''
                 output_line.append(value)
             click.echo(','.join(output_line), file=outfile)
+
 
 if __name__ == '__main__':
     filter()
