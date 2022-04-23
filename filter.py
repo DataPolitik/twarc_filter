@@ -35,7 +35,7 @@ def filter_tweet(tweet, fields):
                     filtered_tweet[first_field] = sub_tweet
                 else:
                     if isinstance(filtered_tweet[first_field], list):
-                        filtered_tweet[first_field] = [dict_a | dict_b for dict_a,dict_b
+                        filtered_tweet[first_field] = [dict_a | dict_b for dict_a, dict_b
                                                        in zip(filtered_tweet[first_field], sub_tweet)]
             else:
                 filtered_tweet[first_field] = None
@@ -61,34 +61,32 @@ def load_json_file(infile) -> Generator:
 
 
 @click.command()
-@click.option('--infile', required=False, type=click.STRING)
-@click.option('--outfile', required=False, type=click.File('w'))
-@click.option('--fields', required=False, default=DEFAULT_FIELDS, multiple=True)
-@click.option('--format', required=False, default='json', type=click.STRING)
-def filter(infile: str,
-           outfile: TextIOWrapper,
-           fields: List[str],
-           format: str):
-
+@click.option('-i', '--infile', required=False, type=click.STRING)
+@click.option('-o', '--outfile', required=False, type=click.File('w'))
+@click.option('-f', '--fields', required=False, default=DEFAULT_FIELDS, multiple=True)
+@click.option('-e', '--extension', required=False, default='json', type=click.STRING)
+def twarc_filter(infile: str,
+                 outfile: TextIOWrapper,
+                 fields: List[str],
+                 extension: str):
     if infile[-6:] == ".jsonl":
         click.echo("{} doesn't seems to be a flatten file. You can generate a flatten file by executing the following "
                    "command: twarc2 flatten [OPTIONS] {} [OUTFILE] "
-                   "This plugins requires a flatten file to be executed".format(infile,infile))
+                   "This plugins requires a flatten file to be executed".format(infile, infile))
         click.confirm("Do you wish to continue?", abort=True)
-
 
     infile_file = open(infile, 'rb')
     tweet_generator: Generator = load_json_file(infile_file)
     csv_headers = set()
     for tweet in tweet_generator:
         filtered_tweet = filter_tweet(tweet, fields)
-        if format == 'json':
+        if extension == 'json':
             click.echo(filtered_tweet, file=outfile)
-        elif format == 'csv':
+        elif extension == 'csv':
             headers = generate_nested_keys(filtered_tweet, fields)
             csv_headers.update(headers)
 
-    if format == 'csv':
+    if extension == 'csv':
         csv_headers_list = list(csv_headers)
         csv_headers_list.sort()
         click.echo(','.join(csv_headers_list), file=outfile)
@@ -109,4 +107,4 @@ def filter(infile: str,
 
 
 if __name__ == '__main__':
-    filter()
+    twarc_filter()
