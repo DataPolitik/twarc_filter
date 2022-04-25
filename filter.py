@@ -1,9 +1,12 @@
-from io import TextIOWrapper
-from typing import List, Generator
+import json
 
 import ijson
 import click
 import nesteddictionary
+
+from io import TextIOWrapper
+from typing import List, Generator
+from twarc import ensure_flattened
 
 DEFAULT_FIELDS: List[str] = [
     'referenced_tweets.author.username',
@@ -61,38 +64,32 @@ def load_json_file(infile) -> Generator:
 
 
 @click.command()
-@click.option('-i', '--infile', required=False, type=click.STRING)
-@click.option('-o', '--outfile', required=False, type=click.File('w'))
 @click.option('-f', '--fields', required=False, default=DEFAULT_FIELDS, multiple=True)
 @click.option('-e', '--extension', required=False, default='json', type=click.STRING)
-def twarc_filter(infile: str,
+@click.argument('infile', type=click.File('r'), default='-')
+@click.argument('outfile', type=click.File('w'), default='-')
+def twarc_filter(infile: TextIOWrapper,
                  outfile: TextIOWrapper,
                  fields: List[str],
                  extension: str):
-    if infile[-6:] == ".jsonl":
-        click.echo("{} doesn't seems to be a flatten file. You can generate a flatten file by executing the following "
-                   "command: twarc2 flatten [OPTIONS] {} [OUTFILE] "
-                   "This plugins requires a flatten file to be executed".format(infile, infile))
-        click.confirm("Do you wish to continue?", abort=True)
 
-    infile_file = open(infile, 'rb')
-    tweet_generator: Generator = load_json_file(infile_file)
     csv_headers = set()
-    for tweet in tweet_generator:
-        filtered_tweet = filter_tweet(tweet, fields)
-        if extension == 'json':
-            click.echo(filtered_tweet, file=outfile)
-        elif extension == 'csv':
-            headers = generate_nested_keys(filtered_tweet, fields)
-            csv_headers.update(headers)
+    for line in infile:
+        for tweet in ensure_flattened(json.loads(line)):
+            filtered_tweet = filter_tweet(tweet, fields)
+            if extension == 'json':
+                click.echo(filtered_tweet, file=outfile)
+            elif extension == 'csv':
+                headers = generate_nested_keys(filtered_tweet, fields)
+                csv_headers.update(headers)
 
     if extension == 'csv':
         csv_headers_list = list(csv_headers)
         csv_headers_list.sort()
         click.echo(','.join(csv_headers_list), file=outfile)
 
-        infile_file.seek(0, 0)
-        tweet_generator: Generator = load_json_file(infile_file)
+        infile.seek(0, 0)
+        tweet_generator: Generator = load_json_file(infile)
         for tweet in tweet_generator:
             filtered_tweet = filter_tweet(tweet, fields)
             nested_tweet = nesteddictionary.NestedDict(filtered_tweet)
