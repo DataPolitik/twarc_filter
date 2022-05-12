@@ -57,7 +57,7 @@ def generate_nested_keys(tweet, fields):
 
 
 def is_tweet_related(tweet, relation):
-    if tweet['referenced_tweets'] is not None:
+    if 'referenced_tweets' in tweet and tweet['referenced_tweets'] is not None:
         return relation in [reference['type'] for reference in tweet['referenced_tweets']]
     else:
         return False
@@ -85,7 +85,7 @@ def twarc_filter(infile: TextIOWrapper,
         for tweet in ensure_flattened(json.loads(line)):
             filtered_tweet = filter_tweet(tweet, fields)
             if related is not None:
-                is_add_tweet = is_tweet_related(filtered_tweet, related)
+                is_add_tweet = is_tweet_related(tweet, related)
             else:
                 is_add_tweet = True
             if is_add_tweet:
@@ -104,7 +104,7 @@ def twarc_filter(infile: TextIOWrapper,
             for tweet in ensure_flattened(json.loads(line)):
                 filtered_tweet = filter_tweet(tweet, fields)
                 if related is not None:
-                    is_add_tweet = is_tweet_related(filtered_tweet, related)
+                    is_add_tweet = is_tweet_related(tweet, related)
                 else:
                     is_add_tweet = True
                 if is_add_tweet:
