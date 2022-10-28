@@ -34,7 +34,7 @@ And then, move to the folder **twarc_filter**. Then, install all modules require
 
 You can type any fields name from the input json, separated by comma. Example:
 
-`filter.py -i test.json -o test_output.json -f referenced_tweets.type,source`
+`filter.py -i examples/test.json -o test_output.json -f referenced_tweets.type,source`
 
 This command extracts from every tweet in test.json the fields referenced_tweets.type and source.
 Just be sure that these fields exists in the input file.
